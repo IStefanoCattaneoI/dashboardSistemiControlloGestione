@@ -6,6 +6,8 @@ from flask_sqlalchemy import SQLAlchemy
 import secrets
 from os import path
 import pandas as pd
+from .models import Cliente, Valuta, Vendita, Consumo, Impiego, Risorsa
+
 
 
 #creo il database per muovermi più facilmente tra le tabelle
@@ -33,7 +35,7 @@ def create_app() :
     print(" procedura riempimento database: ")
     keytoinsert = 'sicksUniverse'
     key = input(" --> inserisci la password per riempire il database o resettarlo ai valori iniziali: ")
-    if (key == keytoinsert) :
+    if (key == keytoinsert):
         riempiDatabase()
     return app
 
@@ -58,6 +60,10 @@ def riempiDatabase():
         fattureCumulative = df.iloc[i, 1]
         valutaCliente = df.iloc[i, 2]
         print(str(codiceCliente) + " " + str(fattureCumulative) + " " + str(valutaCliente) + " ")
+        newCliente = Cliente(codCliente=codiceCliente, fattureCumulative=fattureCumulative, valutaCliente = valutaCliente)
+        db.session.add(newCliente)
+        db.session.commit()
+
 
     print("---------------------------VALUTA----------------------------------")
     #leggo "tassiDiCambio" e riempio la tabella del database "Valuta"
@@ -68,6 +74,9 @@ def riempiDatabase():
         budOCons = df.iloc[i, 1]
         tassoCambioMedio = df.iloc[i, 2]
         print(str(codValuta) + " " + str(budOCons) + " " + str(tassoCambioMedio) + " ")
+        newValuta = Valuta(codValuta=codValuta, budOCons=budOCons, tassoCambioMedio=tassoCambioMedio)
+        db.session.add(newValuta)
+        db.session.commit()
 
     print("---------------------------VENDITA----------------------------------")
     # leggo "Vendite" e riempio la tabella del database "Vendita"
@@ -81,6 +90,9 @@ def riempiDatabase():
         qta = df.iloc[i, 4]
         importoVenditeVL = df.iloc[i, 5]
         print(str(nrMovimentoV) + " " + tipo + " " + str(nrArticolo) + " " + str(nrOrigine) + " " + str(qta) + " " + str(importoVenditeVL) + " ")
+        newVendita = Vendita(nrMovimentoV=nrMovimentoV, tipo=tipo, nrArticolo=nrArticolo, nrOrigine=nrOrigine, qta=qta,importoVenditeVL=importoVenditeVL)
+        db.session.add(newVendita)
+        db.session.commit()
 
     print("---------------------------CONSUMO----------------------------------")
     # leggo "Consumi" e riempio la tabella del database "Consumo"
@@ -95,6 +107,9 @@ def riempiDatabase():
         qta = df.iloc[i, 5]
         importoTotaleC = df.iloc[i, 6]
         print(str(nrMovimentoC) + " " + tipo + " " + str(codiceMP) + " " + str(nrArticolo) + " " + str(nrDocumentoODP) + " " + str(qta) + " " + str(importoTotaleC) + " ")
+        newConsumo = Consumo(nrMovimentoC=nrMovimentoC, tipo=tipo, codiceMP=codiceMP, nrArticolo=nrArticolo, nrDocumentoODP=nrDocumentoODP, qta=qta, importoTotaleC=importoTotaleC)
+        db.session.add(newConsumo)
+        db.session.commit()
 
     print("---------------------------IMPIEGO----------------------------------")
     # leggo "impiegoOrarioRisorse" e riempio la tabella del database "Impiego"
@@ -110,6 +125,9 @@ def riempiDatabase():
         tempoRisorsa = df.iloc[i, 6]
         qtaOutput = df.iloc[i, 7]
         print(str(nrArticolo) + " " + tipo + " " + str(nrODP) + " " + str(descrizione) + " " + str(areaProd) + " " + str(risorsa) + " " + str(tempoRisorsa) + " " + str(qtaOutput))
+        newImpiego = Impiego(nrArticolo=nrArticolo,tipo=tipo,nrODP=nrODP,descrizione=descrizione,areaProd=areaProd,risorsa=risorsa,tempoRisorsa=tempoRisorsa,qtaOutput=qtaOutput)
+        db.session.add(newImpiego)
+        db.session.commit()
 
     print("---------------------------RISORSA----------------------------------")
     # leggo "Risorse" e riempio la tabella del database "Risorsa"
@@ -122,5 +140,8 @@ def riempiDatabase():
         costoOrarioConsuntivo = df.iloc[i, 3]
         print(
             str(codRisorsa) + " " + str(areaProd) + " " + str(costoOrarioBudget) + " " + str(costoOrarioConsuntivo) + " ")
+        newRisorsa = Risorsa(codRisorsa=codRisorsa,areaProd=areaProd,costoOrarioBudget=costoOrarioBudget,costoOrarioConsuntivo=costoOrarioConsuntivo)
+        db.session.add(newRisorsa)
+        db.session.commit()
 
     #quelliCheUsanoDollaro = df[(df['Valuta'] == 2)]

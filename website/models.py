@@ -1,7 +1,4 @@
-from . import db
-
-#definizioni classi
-
+from website.templates import db
 
 class Cliente(db.model):
     codiceCliente = db.Column(db.String(8), primary_key=True)
