@@ -1,25 +1,25 @@
-from website.templates import db
+from . import db
 
-class Cliente(db.model):
+class Cliente(db.Model):
     codiceCliente = db.Column(db.String(8), primary_key=True)
-    fattureCumulative = db.Column(db.Boolean)
+    fattureCumulative = db.Column(db.String(6))
     valutaCliente = db.Column(db.Integer, db.ForeignKey('valuta.codValuta'))
     vendite = db.relationship('Vendita')
 
-class Valuta(db.model):
+class Valuta(db.Model):
     codValuta = db.Column(db.Integer, primary_key=True)
     budOCons = db.Column(db.String(10), primary_key=True) #budget o consuntivo
     tassoCambioMedio = db.Column(db.Float)
 
-class Vendita(db.model):
+class Vendita(db.Model):
     nrMovimentoV = db.Column(db.Integer, primary_key=True)
     tipo = db.Column(db.String(10),db.ForeignKey('valuta.budOCons'))  # budget o consuntivo
-    nrArticolo = db.Column(db.String(10+1))
-    nrOrigine = db.Column(db.String(7+1), db.ForeignKey('cliente.codiceCliente'))
+    nrArticolo = db.Column(db.String(11))
+    nrOrigine = db.Column(db.String(8), db.ForeignKey('cliente.codiceCliente'))
     qta = db.Column(db.Integer)
     importoVenditeVL = db.Column(db.Float)  #importo totale delle vendite in valuta locale
 
-class Consumo(db.model):
+class Consumo(db.Model):
     nrMovimentoC = db.Column(db.Integer, primary_key=True)
     tipo = db.Column(db.String(10))  # budget o consuntivo
     codiceMP = db.Column(db.String(10))
@@ -28,7 +28,7 @@ class Consumo(db.model):
     qtaC = db.Column(db.Integer)
     importoTotaleC = db.Column(db.Float)
 
-class Impiego(db.model) :
+class Impiego(db.Model) :
     nrArticolo = db.Column(db.String(10), primary_key=True)
     tipo = db.Column(db.String(10))  # budget o consuntivo
     nrODP = db.Column(db.String(11), db.ForeignKey('consumo.nrDocumentoODP'))
@@ -38,7 +38,7 @@ class Impiego(db.model) :
     tempoRisorsa = db.Column(db.Float)
     qtaOutput = db.Column(db.Integer)
 
-class Risorsa(db.model) :
+class Risorsa(db.Model) :
     codRisorsa = db.Column(db.String(5), primary_key=True)
     areaProd = db.Column(db.String(3))
     costoOrarioBudget = db.Column(db.Float)
