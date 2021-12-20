@@ -21,6 +21,10 @@ def create_app() :
     # configura database
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_NAME}'
     db.init_app(app)
+    #engine = db.create_engine(f'sqlite:///{DB_NAME}')
+    #connection = engine.connect()
+
+
 
     # registra il blueprint
     from .views import views

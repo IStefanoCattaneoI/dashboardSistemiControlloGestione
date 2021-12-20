@@ -1,10 +1,12 @@
 from . import db
 
 class Cliente(db.Model):
+    # def __init__(self):
     codiceCliente = db.Column(db.String(8), primary_key=True)
     fattureCumulative = db.Column(db.String(6))
     valutaCliente = db.Column(db.Integer, db.ForeignKey('valuta.codValuta'))
     vendite = db.relationship('Vendita')
+
 
 class Valuta(db.Model):
     codValuta = db.Column(db.Integer, primary_key=True)

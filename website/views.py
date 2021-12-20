@@ -4,13 +4,37 @@ from flask import Blueprint, render_template
 import pandas as pd
 from website import db
 from website.models import Cliente, Valuta, Vendita, Consumo, Impiego, Risorsa
+from sqlalchemy import select, func
 #from . import db
 
 views = Blueprint('views', __name__)
 
+@views.route('/queries')
+def query():
+    #engine = db.create_engine('sqlite:///cliente.sqlite')
+    #connection = engine.connect()
+    #metadata = db.MetaData()
+    #Cliente = db.Table('Cliente', metadata, autoload=True, autoload_with=engine)
+    #query = db.select([Cliente])
+    #ResultProxy = connection.execute(query)
+    #ResultSet = ResultProxy.fetchall()
+    #ResultSet[:3]
+    codCliente = 'C00140'
+    query = Cliente.query.filter_by(codiceCliente=codCliente).first()
+    print(query.valutaCliente)
+    connection = db.session.connection()
+    row = connection.execute('SELECT * FROM Cliente ')
+    p
+
+    #vogliamo contare le persone che hanno valuta 1
+
+
+
+
+    return "<p>ciao</p>"
+
 @views.route('/')
 def home():
-
     return render_template("base.html")
 
 @views.route('/scostamentiVendite')
@@ -133,4 +157,7 @@ def riempi():
                     db.session.add(newRisorsa)
                     db.session.commit()
 
-        # quelliCheUsanoDollaro = df[(df['Valuta'] == 2)]
+            else :
+                codicetosearch = input("inserisci codice che vuoi cercare:")
+                #C00140
+
