@@ -6,11 +6,75 @@ from website import db
 from website.models import Cliente, Valuta, Vendita, Consumo, Impiego, Risorsa
 #from . import db
 
+
 views = Blueprint('views', __name__)
 
 @views.route('/')
 def home():
+    #----ESEMPIO DI QUERY con SQLALCHEMY (NO JOIN QUI) -------------------
+    #newCliente1 = Cliente.query.filter_by(codiceCliente='C00140')
+    newCliente = Cliente.query.filter_by(valutaCliente=2).all()#trova tutti i clienti che usano l'euro
+    vend = Vendita.query.filter_by(tipo="BUDGET", qta=5).all()#trova tutte le vendite a budget con quantità 5
+    quantinehannovenduti5 = len(vend) #contare le entry del risultato della query vend
+    vend2 = Vendita.query.filter_by(tipo="BUDGET").all() #trova tutte le vendite a budget
+    # voglio trovare tutte le vendite a budget del cliente dato e fare la somma dell'importo totale
+    tipo = "Consuntivo"
+    cc = 'C00003'
+    subtotaleVL = 0
 
+
+    """
+    #versione funzionante: 1 (più lenta e lunga da scrivere) 
+    vend3 = Vendita.query.filter_by(tipo=tipo, nrOrigine=cc).all()
+    for i in range(len(vend3)):
+        burner = str(vend3[i]) #trasformo il singolo elemento in stringa
+        burnersplit = burner.split(" ")
+        burner2 = burnersplit[1]
+        burnersplit2 = burner2.split(">")
+        codiceVenditaToSearch = burnersplit2[0]
+        print(codiceVenditaToSearch)
+        vendita = Vendita.query.filter_by(nrMovimentoV=codiceVenditaToSearch).first()
+        vendz = vendita.importoVenditeVL
+        subtotaleVL = subtotaleVL + vendz
+        print(burner + " " + str(subtotaleVL))  #qua mi serve a capire se sta venendo aggiornato o meno!!!
+    print(str(subtotaleVL) + " questo è il totale pagato a " + tipo + " dal cliente: " + str(cc))
+    """
+
+
+    #alternativa più compatta:2 (ORA FUNZIONANTE)
+    vend4 = Vendita.query.filter_by(tipo=tipo, nrOrigine=cc).all()
+    for i in range(len(vend4)):
+        venditaa = vend4[i].importoVenditeVL #vend4[i] dovrebbe essere una singola vendita delle condizioni soddisfatte sopra
+        print(venditaa)
+        subtotaleVL = subtotaleVL + venditaa
+    #----parte che non c'è nella versione 1. che valuta ha il cliente x?
+    print(subtotaleVL)
+    subtotaleInEuro = subtotaleVL
+    clien1 = Cliente.query.filter_by(codiceCliente = cc).first()
+    valClien = clien1.valutaCliente
+    print(valClien)
+    if valClien == 2: #caso in cui il cliente paga in dollari
+        if tipo == "BUDGET" :
+            subtotaleInEuro = subtotaleInEuro * 0.94868 #conversione dollaro/euro a budget
+        else:
+            subtotaleInEuro = subtotaleInEuro * 0.8338 #conversione dollaro/euro a consuntivo
+    elif valClien == 3: #caso in cui il cliente paga in yen
+        if tipo == "BUDGET" :
+            subtotaleInEuro = subtotaleInEuro * 0.0081300813 #conversione yen/euro a budget
+        else:
+            subtotaleInEuro = subtotaleInEuro * 0.00740685875 #conversione yen/euro a consuntivo
+    print(str(subtotaleInEuro) + " questo è il totale pagato a " + tipo + " dal cliente: " + str(cc) + " in Euro")
+
+
+    #-----------------------------------------------
+    #print(vend3)
+    #print(str(len(vend3)) + " totale vendite del cliente: " + cc)
+    print(str(len(vend2)) + " vendite totali a budget")
+    print(str(quantinehannovenduti5) + " vendite a budget con quantita 5")
+    print(newCliente)
+    print(vend)
+    #print(newCliente1)
+    print("sono DOPO la query")
     return render_template("base.html")
 
 @views.route('/scostamentiVendite')
