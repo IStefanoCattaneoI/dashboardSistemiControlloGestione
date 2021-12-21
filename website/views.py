@@ -1,6 +1,6 @@
 #in views definiamo le routes
 
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request, redirect, url_for
 import pandas as pd
 from website import db
 from website.models import Cliente, Valuta, Vendita, Consumo, Impiego, Risorsa
@@ -9,7 +9,7 @@ from website.models import Cliente, Valuta, Vendita, Consumo, Impiego, Risorsa
 
 views = Blueprint('views', __name__)
 
-@views.route('/')
+@views.route('/', methods=['GET','POST'])
 def home():
     #----ESEMPIO DI QUERY con SQLALCHEMY (NO JOIN QUI) -------------------
     #newCliente1 = Cliente.query.filter_by(codiceCliente='C00140')
@@ -18,9 +18,39 @@ def home():
     quantinehannovenduti5 = len(vend) #contare le entry del risultato della query vend
     vend2 = Vendita.query.filter_by(tipo="BUDGET").all() #trova tutte le vendite a budget
     # voglio trovare tutte le vendite a budget del cliente dato e fare la somma dell'importo totale
-    tipo = "Consuntivo"
-    cc = 'C00003'
-    subtotaleVL = 0
+
+
+    # PROVO A RENDERE INTERATTIVA LA NOSTRA WEB APP
+    if request.method == 'POST':
+        tipo = request.form.get('tipo')
+        cc = request.form.get('codiceCliente')
+        subtotaleVL = 0
+
+        # alternativa più compatta:2 (ORA FUNZIONANTE)
+        vend4 = Vendita.query.filter_by(tipo=tipo, nrOrigine=cc).all()
+        for i in range(len(vend4)):
+            venditaa = vend4[
+                i].importoVenditeVL  # vend4[i] dovrebbe essere una singola vendita delle condizioni soddisfatte sopra
+            print(venditaa)
+            subtotaleVL = subtotaleVL + venditaa
+        # ----parte che non c'è nella versione 1. che valuta ha il cliente x?
+        print(subtotaleVL)
+        subtotaleInEuro = subtotaleVL
+        clien1 = Cliente.query.filter_by(codiceCliente=cc).first()
+        valClien = clien1.valutaCliente
+        print(valClien)
+        if valClien == 2:  # caso in cui il cliente paga in dollari
+            if tipo == "BUDGET":
+                subtotaleInEuro = subtotaleInEuro * 0.94868  # conversione dollaro/euro a budget
+            else:
+                subtotaleInEuro = subtotaleInEuro * 0.8338  # conversione dollaro/euro a consuntivo
+        elif valClien == 3:  # caso in cui il cliente paga in yen
+            if tipo == "BUDGET":
+                subtotaleInEuro = subtotaleInEuro * 0.0081300813  # conversione yen/euro a budget
+            else:
+                subtotaleInEuro = subtotaleInEuro * 0.00740685875  # conversione yen/euro a consuntivo
+        print(str(subtotaleInEuro) + " questo è il totale pagato a " + tipo + " dal cliente: " + str(cc) + " in Euro")
+
 
 
     """
@@ -41,32 +71,10 @@ def home():
     """
 
 
-    #alternativa più compatta:2 (ORA FUNZIONANTE)
-    vend4 = Vendita.query.filter_by(tipo=tipo, nrOrigine=cc).all()
-    for i in range(len(vend4)):
-        venditaa = vend4[i].importoVenditeVL #vend4[i] dovrebbe essere una singola vendita delle condizioni soddisfatte sopra
-        print(venditaa)
-        subtotaleVL = subtotaleVL + venditaa
-    #----parte che non c'è nella versione 1. che valuta ha il cliente x?
-    print(subtotaleVL)
-    subtotaleInEuro = subtotaleVL
-    clien1 = Cliente.query.filter_by(codiceCliente = cc).first()
-    valClien = clien1.valutaCliente
-    print(valClien)
-    if valClien == 2: #caso in cui il cliente paga in dollari
-        if tipo == "BUDGET" :
-            subtotaleInEuro = subtotaleInEuro * 0.94868 #conversione dollaro/euro a budget
-        else:
-            subtotaleInEuro = subtotaleInEuro * 0.8338 #conversione dollaro/euro a consuntivo
-    elif valClien == 3: #caso in cui il cliente paga in yen
-        if tipo == "BUDGET" :
-            subtotaleInEuro = subtotaleInEuro * 0.0081300813 #conversione yen/euro a budget
-        else:
-            subtotaleInEuro = subtotaleInEuro * 0.00740685875 #conversione yen/euro a consuntivo
-    print(str(subtotaleInEuro) + " questo è il totale pagato a " + tipo + " dal cliente: " + str(cc) + " in Euro")
 
 
-    #-----------------------------------------------
+
+    #----------------------------------------------- LO RIPETE DUE VOLTE
     #print(vend3)
     #print(str(len(vend3)) + " totale vendite del cliente: " + cc)
     print(str(len(vend2)) + " vendite totali a budget")
@@ -75,7 +83,7 @@ def home():
     print(vend)
     #print(newCliente1)
     print("sono DOPO la query")
-    return render_template("base.html")
+    return render_template("home.html")
 
 @views.route('/scostamentiVendite')
 def vendite():
