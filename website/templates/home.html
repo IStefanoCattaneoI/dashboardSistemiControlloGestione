@@ -1,22 +1,31 @@
 {% extends "base.html" %}
-{% block title %} Home {% endblock %}
+{% block title %} Home
+{% endblock %}
 {% block content %}
 <br>
-<form method = "POST">
-    <h1 align = "center"> Calcolo SCOSTAMENTI CLIENTE</h1>
-    <div>
-        <br>
-        <label for = "codiceCliente"> CODICE CLIENTE </label>
-        <input type = "text" class = "form-control" id="codiceCliente" name = "codiceCliente" placeholder=" inserire codice Cliente da cercare"/>
-        <br>
-        <label for = "tipo"> BUDGET O CONSUNTIVO? </label>
-        <select name="tipo" id="tipo">
-            <option value = "BUDGET"> Budget </option>
-            <option value = "Consuntivo"> Consuntivo </option>
-        </select>
-        <!--- <input type = "submit" value = "Submit" /> --->
-        <br>
-        <button type = "submit" class = "btn btn-primary"> CALCOLA </button>
+<br>
+<br>
+<section id = "home">
+    <div class = "container text-center">
+        <h1> FUNZIONI DISPONIBILI SULLA DASHBOARD </h1>
+        <div class = "row">
+            <div class = "col-md-4 servizio">
+                <img src = "images/client.png" class = "servizio-img">
+                <h4> <b> ANALISI SCOSTAMENTO PER CLIENTE  </b> </h4>
+                <p> inserendo il codice del cliente sarà possibile generare gli scostamenti.</p>
+            </div>
+            <div class = "col-md-4 servizio">
+                <img src = "images/distributed.png" class = "servizio-img">
+                <h4> <b> ANALISI SCOSTAMENTO PER ARTICOLO  </b> </h4>
+                <p> inserendo il codice dell'articolo sarà possibile generare gli scostamenti.</p>
+            </div>
+            <div class = "col-md-4 servizio">
+                <img src = "images/monitor.png" class = "servizio-img">
+                <h4> <b> PANORAMICA SITUAZIONE AZIENDALE </b> </h4>
+                <p> riassunto sull' attività aziendale </p>
+            </div>
+        </div>
     </div>
-</form>
+</section>
+
 {% endblock %}
