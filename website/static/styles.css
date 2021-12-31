@@ -1,0 +1,82 @@
+*
+{
+    margin: 0;
+    padding: 0;
+}
+
+body
+{
+font-family: serif;
+}
+
+/**---------------------HOME ----------------------**/
+
+#home{
+  padding: 30px 10;
+}
+
+.servizio-img{
+    width: 100px;
+    margin-top: 20px;
+}
+
+.servizio{
+    padding: 30px;
+}
+
+.servizio h4 {
+    padding: 5px;
+    margin-top: 20px;
+    text-transform: uppercase;
+}
+
+.table{
+    border-spacing: 0;
+    margin:1rem;
+    bacgkground-color: #f5f5f5;
+}
+
+.table:hover {
+    transform: translateY(-10px);
+}
+
+.table__row:nth-child(even){
+    background-color: #e5e5e5;
+}
+
+.table__row:hover{
+     background-color: #d6d9a7;
+}
+
+.table__header{
+    text-align: left;
+}
+
+.table-cell {
+    padding: 8px;
+}
+
+/**-------- TEAM MEMBER ---**/
+.team-member{
+    padding: 5 20px;
+    height: 300px;
+    width: 300px;
+    border-radius: 60px;
+
+}
+
+.team-member:hover {
+    transform: translateY(-5px)
+}
+
+.nome{
+    margin-top: 15px;
+}
+/**-------- VALIDI PER TUTTI ---*/
+.titolo{
+    padding: 30px 0;
+    margin-top: 20px;
+}
+
+
+

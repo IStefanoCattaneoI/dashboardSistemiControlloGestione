@@ -45,4 +45,3 @@ class Risorsa(db.Model):
     areaProd = db.Column(db.String(3))
     costoOrarioBudget = db.Column(db.Float)
     costoOrarioConsuntivo = db.Column(db.Float)
-

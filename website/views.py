@@ -1,5 +1,4 @@
 #in views definiamo le routes
-
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 import pandas as pd
 from website import db
@@ -9,393 +8,332 @@ from website.models import Cliente, Valuta, Vendita, Consumo, Impiego, Risorsa
 
 views = Blueprint('views', __name__)
 
-@views.route('/s')
+#li definisco all'avvio gli array da riempire in modo tale da poterli riusare in diverse parti del sito
+listaPrezziBudget = []
+listaQuantitaBudget = []
+mixBudget = []
+listaPrezziCons = []
+listaQuantitaCons = []
+mixCons = []
+listaQuantitaMixStd = []
+mixMixEffettivo = []
+listaCostiUnitariMPBudget = []
+listaCostiUnitariLAVBudget = []
+listaCostiUnitariBudget = []
+listaCostiUnitariMPCons = []
+listaCostiUnitariLAVCons = []
+listaCostiUnitariCons = []
+# 0: qtaB, 4: rB, 8:cB , 12: mB -- max 15
+listaTotali = []
+
+@views.route('/scostamenti')
 def fai():
 
-    print("proviamo il distinct")
+    llista = []
     lista = db.session.query(Vendita.nrArticolo).distinct().all()
+    for i in range(len(lista)):
+        llista.append(lista[i])
     print(lista)
+    print(llista)
     print(" quanti articoli ho: " + str(len(lista)))
-    #QUA SI DEVE FARE SIA A BUDGET CHE A CONSUNTIVO RIPETERE x2
-    qtaBudget = 0 #qtaTOTALE RIGA D8 exe scostamenti
-    listaPrezziBudget = []
-    listaQuantitaBudget = []
-    mixBudget = []
-    for i in range(len(lista)) : #for con il distinct
-        #
-        qtasingola = 0
-        prezzosingolo = 0.00
-        prezzotot = 0.00
-        volume = 0
-        tipo = "BUDGET"
-        arttocheck = lista[i].nrArticolo
-        #
-        print("TABELLA RICAVI => " + tipo + " => " + arttocheck)
-        artB = Vendita.query.filter_by(nrArticolo=arttocheck, tipo=tipo).all()
-        for j in range(len(artB)): #for con il group by
-            qtasingola = qtasingola + artB[j].qta
-            prezzosingolo = artB[j].importoVenditeVL
-            prezzosingolo = conversioneValuta(prezzosingolo, artB[j].nrOrigine, tipo)
-            prezzotot = prezzotot + prezzosingolo
-        volume = qtasingola
-        listaQuantitaBudget.append(volume)
-        prezzotot = prezzotot/volume #questo sarebbe il prezzo unitario, non cambio variabile
-        listaPrezziBudget.append(prezzotot)
-        qtaBudget = qtaBudget + volume
-        print(str(volume) + "  " + str(round(prezzotot, 2)))
-    print("TOTALE QUANTITA' TUTTI ARTICOLI => " + str(qtaBudget))
-
-    #QUA CALCOLIAMO IL MIX
-    for i in range(len(lista)) : #for per trovare il mix
-        mixBudget.append((listaQuantitaBudget[i] / qtaBudget)*100)
-        print(str(round(mixBudget[i],3)) + " %" + "  |  " + lista[i].nrArticolo)
-
-    #QUA CALCOLIAMO IL RICAVO TOTALE
-    ricavoBudget = 0.00
-    for i in range(len(lista)) :
-        ricavoBudget = ricavoBudget + listaQuantitaBudget[i]*listaPrezziBudget[i]
-    print(" RICAVI TOTALI: " + " a " + tipo + "  =>  " + str(round(ricavoBudget, 2)))
-
-    print()
-    print()
-    #PARTE A CONSUNTIVO: QUARTA COLONNA DI EXCEL
-    qtaCons = 0  # qtaTOTALE RIGA J8 exe scostamenti
-    listaPrezziCons = []
-    listaQuantitaCons = []
-    mixCons = []
-    for i in range(len(lista)):  # for con il distinct
-        #
-        qtasingola = 0
-        prezzosingolo = 0.00
-        prezzotot = 0.00
-        volume = 0
-        tipo = "Consuntivo"
-        arttocheck = lista[i].nrArticolo
-        #
-        print("TABELLA RICAVI => " + tipo + " => " + arttocheck)
-        artB = Vendita.query.filter_by(nrArticolo=arttocheck, tipo=tipo).all()
-        for j in range(len(artB)):  # for con il group by
-            qtasingola = qtasingola + artB[j].qta
-            prezzosingolo = artB[j].importoVenditeVL
-            prezzosingolo = conversioneValuta(prezzosingolo, artB[j].nrOrigine, tipo)
-            prezzotot = prezzotot + prezzosingolo
-        volume = qtasingola
-        listaQuantitaCons.append(volume)
-        prezzotot = prezzotot / volume  # questo sarebbe il prezzo unitario, non cambio variabile
-        listaPrezziCons.append(prezzotot)
-        qtaCons = qtaCons + volume
-        print(str(volume) + "  " + str(round(prezzotot, 2)))
-    print("TOTALE QUANTITA' TUTTI ARTICOLI => " + str(qtaCons))
-
-    # QUA CALCOLIAMO IL MIX
-    for i in range(len(lista)):  # for per trovare il mix
-        mixCons.append((listaQuantitaCons[i] / qtaCons) * 100)
-        print(str(round(mixCons[i], 3)) + " %" + "  |  " + lista[i].nrArticolo)
-
-    # QUA CALCOLIAMO IL RICAVO TOTALE CONSUNTIVO
-    ricavoCons = 0.00
-    for i in range(len(lista)):
-        ricavoCons = ricavoCons + listaQuantitaCons[i] * listaPrezziCons[i]
-    print(" RICAVI TOTALI: " + " a " + tipo + "  =>  " + str(round(ricavoCons, 2)))
 
 
-    # MIX STANDARD!!!
-    qtaTotStandard = qtaCons
-    listaQuantitaMixStd = []
-    for i in range(len(lista)) :
-        listaQuantitaMixStd.append((qtaTotStandard*mixBudget[i])/100)
-        print(str(round(listaQuantitaMixStd[i])))
-    ricaviMixStd = 0.00
-    for i in range(len(lista)) :
-        ricaviMixStd = ricaviMixStd + listaQuantitaMixStd[i] *listaPrezziBudget[i]
-    print(" RICAVI TOTALI MIX STANDARD => " + str(round(ricaviMixStd,2)))
+    if len(listaTotali) < 1 :
+        qtaBudget = 0  # qtaTOTALE RIGA D8 exe scostamenti
+        for i in range(len(lista)):  # for con il distinct
+            #
+            qtasingola = 0
+            prezzosingolo = 0.00
+            prezzotot = 0.00
+            volume = 0
+            tipo = "BUDGET"
+            arttocheck = lista[i].nrArticolo
+            #
+            print("TABELLA RICAVI => " + tipo + " => " + arttocheck)
+            artB = Vendita.query.filter_by(nrArticolo=arttocheck, tipo=tipo).all()
+            for j in range(len(artB)):  # for con il group by
+                qtasingola = qtasingola + artB[j].qta
+                prezzosingolo = artB[j].importoVenditeVL
+                prezzosingolo = conversioneValuta(prezzosingolo, artB[j].nrOrigine, tipo)
+                prezzotot = prezzotot + prezzosingolo
+            volume = qtasingola
+            listaQuantitaBudget.append(volume)
+            prezzotot = prezzotot / volume  # questo sarebbe il prezzo unitario, non cambio variabile
+            listaPrezziBudget.append(round(prezzotot, 2))
+            qtaBudget = qtaBudget + volume
+            print(str(volume) + "  " + str(round(prezzotot, 2)))
+        print("TOTALE QUANTITA' TUTTI ARTICOLI => " + str(qtaBudget))
 
+        # QUA CALCOLIAMO IL MIX
+        for i in range(len(lista)):  # for per trovare il mix
+            mixBudget.append(round(((listaQuantitaBudget[i] / qtaBudget) * 100), 3))
+            print(str(round(mixBudget[i], 3)) + " %" + "  |  " + lista[i].nrArticolo)
 
-    #MIX EFFETTIVO!!!
-    qtatotEffettiva = qtaCons
-    mixMixEffettivo = []
-    for i in range(len(lista)):
-        mixMixEffettivo.append((listaQuantitaCons[i]/qtatotEffettiva)*100)
-        print(str(round(mixMixEffettivo[i],3)) + " %" + "  |  " + lista[i].nrArticolo)
-    ricaviMixEffettivo = 0.00
-    for i in range(len(lista)):
-        ricaviMixEffettivo = ricaviMixEffettivo + listaQuantitaCons[i] * listaPrezziBudget[i]
-    print(" RICAVI TOTALI MIX EFFETTIVO => " + str(round(ricaviMixEffettivo)))
-    print()
-    print(" TABELLA RICAVI ")
-    print(" ricavi budget => " + str(round(ricavoBudget)) + "  |  " + " ricavi mix std => " + str(round(ricaviMixStd)) + "  |  " +  " ricavi mix effettivo => " + str(round(ricaviMixEffettivo)) + "  |  " + " ricavi consuntivo => " + str(round(ricavoCons)))
-    print()
-    print()
+        # QUA CALCOLIAMO IL RICAVO TOTALE
+        ricavoBudget = 0.00
+        for i in range(len(lista)):
+            ricavoBudget = ricavoBudget + listaQuantitaBudget[i] * listaPrezziBudget[i]
+        ricavoBudget = round(ricavoBudget,2)
+        print(" RICAVI TOTALI: " + " a " + tipo + "  =>  " + str(round(ricavoBudget, 2)))
 
-    #COSTI VARIABILI --- PARTE BUDGET
-    listaCostiUnitariMPBudget = []
-    listaCostiUnitariLAVBudget = []
-    listaCostiUnitariBudget = []
-    for i in range(len(lista)):  #for con il distinct
-        tipo = "BUDGET"
-        arttocheck = lista[i].nrArticolo
-        #cerco tutti i consumi dell'articolo che sto controllando => MATERIE PRIME
-        artC = Consumo.query.filter_by(tipo=tipo,nrArticolo = arttocheck).all()
-        costoUnitarioSomma = 0.00
-        for j in range(len(artC)) : #TROVIAMO IL COSTO UNITARIO PER PRODOTTO DELLE MP facendo costo totale / quantita
-            costoUnitarioSomma = costoUnitarioSomma + (artC[j].importoTotaleC/listaQuantitaBudget[i])
-        listaCostiUnitariMPBudget.append(costoUnitarioSomma)
-
-        #cerco gli impieghi dell'articolo => LAVORAZIONE
-        costoOrarioSommaUnita = 0
-        artCC = Impiego.query.filter_by(tipo=tipo, nrArticolo = arttocheck).all()
-        for j in range(len(artCC)):#TROVIAMO COSTO UNITARIO DELLA LAVORAZIONE
-            areaProdToCheck = artCC[j].areaProd
-            risToCheck = artCC[j].risorsa
-            #facciamo l'accesso alla tabella risorsa per la singola riga
-            risorsaUsata = Risorsa.query.filter_by(codRisorsa=risToCheck, areaProd = areaProdToCheck).first()
-            #siccome siamo a budget piglio la colonna euro a budget
-            euroAllOra = risorsaUsata.costoOrarioBudget
-            if artCC[j].qtaOutput != 0:
-                costoOrarioSommaUnita = costoOrarioSommaUnita + ((euroAllOra*artCC[j].tempoRisorsa)/artCC[j].qtaOutput)
-        listaCostiUnitariLAVBudget.append(costoOrarioSommaUnita)
-        listaCostiUnitariBudget.append(listaCostiUnitariLAVBudget[i]+listaCostiUnitariMPBudget[i])
-        print(arttocheck + "  |  " + "costo unitario MP => " + str(round(listaCostiUnitariMPBudget[i], 2)) + "  |  "  + " costo unitario LAV =>" + str(round(listaCostiUnitariLAVBudget[i],2)) + "  ==> COSTO UNITARIO PRODOTTO: "+ str(round(listaCostiUnitariBudget[i],2)))
-
-    print()
-    print()
-
-    #COSTI VARIABILI --- PARTE CONSUNTIVO
-    listaCostiUnitariMPCons = []
-    listaCostiUnitariLAVCons = []
-    listaCostiUnitariCons = []
-    for i in range(len(lista)):  #for con il distinct
-        tipo = "CONSUNTIVO"
-        arttocheck = lista[i].nrArticolo
-        #cerco tutti i consumi dell'articolo che sto controllando => MATERIE PRIME
-        artC = Consumo.query.filter_by(tipo=tipo,nrArticolo = arttocheck).all()
-        costoUnitarioSomma = 0.00
-        for j in range(len(artC)) : #TROVIAMO IL COSTO UNITARIO PER PRODOTTO DELLE MP facendo costo totale / quantita
-            costoUnitarioSomma = costoUnitarioSomma + (artC[j].importoTotaleC/listaQuantitaCons[i])
-        listaCostiUnitariMPCons.append(costoUnitarioSomma)
-
-        #cerco gli impieghi dell'articolo => LAVORAZIONE
-        costoOrarioSommaUnita = 0
-        artCC = Impiego.query.filter_by(tipo=tipo, nrArticolo = arttocheck).all()
-        for j in range(len(artCC)):#TROVIAMO COSTO UNITARIO DELLA LAVORAZIONE
-            areaProdToCheck = artCC[j].areaProd
-            risToCheck = artCC[j].risorsa
-            #facciamo l'accesso alla tabella risorsa per la singola riga
-            risorsaUsata = Risorsa.query.filter_by(codRisorsa=risToCheck, areaProd = areaProdToCheck).first()
-            #siccome siamo a consuntivo piglio la colonna euro a consuntivo
-            euroAllOra = risorsaUsata.costoOrarioConsuntivo
-            if artCC[j].qtaOutput != 0:
-                costoOrarioSommaUnita = costoOrarioSommaUnita + ((euroAllOra*artCC[j].tempoRisorsa)/artCC[j].qtaOutput)
-        listaCostiUnitariLAVCons.append(costoOrarioSommaUnita)
-        listaCostiUnitariCons.append(listaCostiUnitariLAVCons[i]+listaCostiUnitariMPCons[i])
-        print(arttocheck + "  |  " + "costo unitario MP => " + str(round(listaCostiUnitariMPCons[i], 2)) + "  |  "  + " costo unitario LAV =>" + str(round(listaCostiUnitariLAVCons[i],2)) + "  ==> COSTO UNITARIO PRODOTTO: "+ str(round(listaCostiUnitariCons[i],2)))
-
-
-    #CVTot = costi variabili totali!!! => qta * costo unitario
-    cvTotBudget = 0.00
-    cvTotMixStd = 0.00
-    cvTotMixEffettivo = 0.00
-    cvTotConsuntivo = 0.00
-    for i in range(len(lista)):
-        cvTotBudget = cvTotBudget + listaQuantitaBudget[i]*listaCostiUnitariBudget[i]
-        cvTotMixStd = cvTotMixStd + listaQuantitaMixStd[i]*listaCostiUnitariBudget[i]
-        cvTotMixEffettivo = cvTotMixEffettivo + listaQuantitaCons[i]*listaCostiUnitariBudget[i]
-        cvTotConsuntivo = cvTotConsuntivo + listaQuantitaCons[i]*listaCostiUnitariCons[i]
-    #calcolo => MOL
-    molBudget =ricavoBudget- cvTotBudget
-    molMixStd =ricaviMixStd-cvTotMixStd
-    molMixEff =ricaviMixEffettivo -cvTotMixEffettivo
-    molCons = ricavoCons-cvTotConsuntivo
-    #calcolo scostamenti ricavi
-    sRBudgetMixStd = ricaviMixStd-ricavoBudget
-    sRMixStdMixEff = ricaviMixEffettivo-ricaviMixStd
-    sRMixEffCons = ricavoCons - ricaviMixEffettivo
-    #calcolo scostamenti costi
-    sCBudgetMixStd = cvTotMixStd - cvTotBudget
-    sCMixStdMixEff = cvTotMixEffettivo - cvTotMixStd
-    scMixEffCons = cvTotConsuntivo - cvTotMixEffettivo
-    #calcolo scostamenti MOL
-    sBudgetMixStd = molMixStd-molBudget
-    sMixStdMixEff = molMixEff-molMixStd
-    sMixEffCons = molCons - molMixEff
-    print()
-    print(" -------------------BUDGET -------------------------")
-    print(" RICAVI TOTALI => " + str(round(ricavoBudget)))
-    print(" COSTI VARIABILI TOTALI  ==> " + str(round(cvTotBudget)))
-    print(" MARGINE OPERATIVO LORDO ==> " + str(round(molBudget)))
-    print(" -----------------------------------------------------------")
-    print(" SCOSTAMENTI TRA BUDGET / MIXSTD (R/C/MOL) ==> " + str(round(sRBudgetMixStd)) + " | "  + str(round(sCBudgetMixStd)) + " | "  + str(round(sBudgetMixStd)))
-    print(" -----------------------------------------------------------")
-
-    print()
-    print(" ------------------- MIX STD -------------------------")
-    print(" RICAVI TOTALI  => " + str(round(ricaviMixStd)))
-    print(" COSTI VARIABILI TOTALI  ==> " + str(round(cvTotMixStd)))
-    print(" MARGINE OPERATIVO LORDO ==> " + str(round(molMixStd)))
-    print(" -----------------------------------------------------------")
-    print(" SCOSTAMENTI TRA MIX STD / MIX EFF (R/C/MOL) ==> " + str(round(sRMixStdMixEff)) + " | " + str(round(sCMixStdMixEff)) + " | "+ str(round(sMixStdMixEff)))
-    print(" -----------------------------------------------------------")
-
-    print()
-    print(" ------------------- MIX EFF -------------------------")
-    print(" RICAVI TOTALI  => " + str(round(ricaviMixEffettivo)))
-    print(" COSTI VARIABILI TOTALI  ==> " + str(round(cvTotMixEffettivo)))
-    print(" MARGINE OPERATIVO LORDO ==> " + str(round(molMixEff)))
-    print(" -----------------------------------------------------------")
-    print(" SCOSTAMENTI TRA MIX EFF / CONSUNTIVO (R/C/MOL) ==> " + str(round(sRMixEffCons)) + " | " + str(round(scMixEffCons)) + " | " + str(round(sMixEffCons)))
-    print(" -----------------------------------------------------------")
-
-    print()
-    print(" ------------------- CONSUNTIVO -------------------------")
-    print(" RICAVI TOTALI  => " + str(round(ricavoCons)))
-    print(" COSTI VARIABILI TOTALI  ==> " + str(round(cvTotConsuntivo)))
-    print(" MARGINE OPERATIVO LORDO ==> " + str(round(molCons)))
-    print(" -----------------------------------------------------------")
-
-    return render_template("base.html")
-
-
-@views.route('/', methods=['GET','POST'])
-def home():
-    #----ESEMPIO DI QUERY con SQLALCHEMY (NO JOIN QUI) -------------------
-    #newCliente1 = Cliente.query.filter_by(codiceCliente='C00140')
-    newCliente = Cliente.query.filter_by(valutaCliente=2).all()#trova tutti i clienti che usano l'euro
-    vend = Vendita.query.filter_by(tipo="BUDGET", qta=5).all()#trova tutte le vendite a budget con quantità 5
-    quantinehannovenduti5 = len(vend) #contare le entry del risultato della query vend
-    vend2 = Vendita.query.filter_by(tipo="BUDGET").all() #trova tutte le vendite a budget
-    # voglio trovare tutte le vendite a budget del cliente dato e fare la somma dell'importo totale
-
-
-
-    #----------------------------------------------- LO RIPETE DUE VOLTE.
-    #print(vend3)
-    #print(str(len(vend3)) + " totale vendite del cliente: " + cc)
-    print(str(len(vend2)) + " vendite totali a budget")
-    print(str(quantinehannovenduti5) + " vendite a budget con quantita 5")
-    print(newCliente)
-    print(vend)
-    #print(newCliente1)
-    print("sono DOPO la query")
-    return render_template("home.html")
-
-@views.route('/scostamentiCliente', methods=['GET','POST'])
-def vendite():
-
-    # PROVO A RENDERE INTERATTIVA LA NOSTRA WEB APP
-    if request.method == 'POST':
-        subtotaleVL = 0
-        tipo = request.form.get('tipo')
-        cc = request.form.get('codiceCliente')
-        x = Cliente.query.filter_by(codiceCliente = cc).first()
-        if x:
-            # alternativa più compatta:2 (ORA FUNZIONANTE)
-            vend4 = Vendita.query.filter_by(tipo=tipo, nrOrigine=cc).all()
-            for i in range(len(vend4)):
-                venditaa = vend4[
-                    i].importoVenditeVL  # vend4[i] dovrebbe essere una singola vendita delle condizioni soddisfatte sopra
-                print(venditaa)
-                subtotaleVL = subtotaleVL + venditaa
-            # ----parte che non c'è nella versione 1. che valuta ha il cliente x?
-            print(subtotaleVL)
-            subtotaleInEuro = subtotaleVL
-            clien1 = Cliente.query.filter_by(codiceCliente=cc).first()
-            valClien = clien1.valutaCliente
-            print(valClien)
-            if valClien == 2:  # caso in cui il cliente paga in dollari
-                if tipo == "BUDGET":
-                    subtotaleInEuro = subtotaleInEuro * 0.94868  # conversione dollaro/euro a budget
-                else:
-                    subtotaleInEuro = subtotaleInEuro * 0.8338  # conversione dollaro/euro a consuntivo
-            elif valClien == 3:  # caso in cui il cliente paga in yen
-                if tipo == "BUDGET":
-                    subtotaleInEuro = subtotaleInEuro * 0.0081300813  # conversione yen/euro a budget
-                else:
-                    subtotaleInEuro = subtotaleInEuro * 0.00740685875  # conversione yen/euro a consuntivo
-            print(
-                str(subtotaleInEuro) + " questo è il totale pagato a " + tipo + " dal cliente: " + str(cc) + " in Euro")
-        else :
-            flash('Inserisci un CODICE CLIENTE valido', category='error')
-
-    return render_template("scostamenticliente.html")
-
-@views.route('/scostamentiArticolo', methods=['GET','POST'])
-def produzione():
-    if request.method == 'POST':
-        print("")
         print()
-        #definisco le variabili che mi servono per creare la tabella degli scostamenti
-        vBudget = 0 #definisce il volume di tale prodotto a budget
-        pBudget = 0.00
-        vConsuntivo = 0
-        pConsuntivo = 0.00
-        qtaB = 0 #usata come sommatore e come variabile della seconda tabella dello scostamento
-        costoMPB = 0.00
-        qtaC = 0
-        costoMPC = 0.00
-        hpzB = 0.00
-        hpzC = 0.00
+        print()
+        # PARTE A CONSUNTIVO: QUARTA COLONNA DI EXCEL
+        qtaCons = 0  # qtaTOTALE RIGA J8 exe scostamenti
+        for i in range(len(lista)):  # for con il distinct
+            #
+            qtasingola = 0
+            prezzosingolo = 0.00
+            prezzotot = 0.00
+            volume = 0
+            tipo = "Consuntivo"
+            arttocheck = lista[i].nrArticolo
+            #
+            print("TABELLA RICAVI => " + tipo + " => " + arttocheck)
+            artB = Vendita.query.filter_by(nrArticolo=arttocheck, tipo=tipo).all()
+            for j in range(len(artB)):  # for con il group by
+                qtasingola = qtasingola + artB[j].qta
+                prezzosingolo = artB[j].importoVenditeVL
+                prezzosingolo = conversioneValuta(prezzosingolo, artB[j].nrOrigine, tipo)
+                prezzotot = prezzotot + prezzosingolo
+            volume = qtasingola
+            listaQuantitaCons.append(volume)
+            prezzotot = prezzotot / volume  # questo sarebbe il prezzo unitario, non cambio variabile
+            listaPrezziCons.append(round(prezzotot, 2))
+            qtaCons = qtaCons + volume
+            print(str(volume) + "  " + str(round(prezzotot, 2)))
+        print("TOTALE QUANTITA' TUTTI ARTICOLI => " + str(qtaCons))
 
-        #creazione tabelle - prima fase leggere per l'articolo le cose da fare
-        art = request.form.get('nrArticolo') #l'utente mi inserisce l'articolo e lo ho qua
-        tipo = request.form.get('tipo') #questa verrà rimossa
-        x = Vendita.query.filter_by(nrArticolo=art).first()
-        if x:
-            #-------------------TABELLA RICAVI --- legata al file excel Vendite --------------------------#
-            print( "TABELLA RICAVI => " + tipo)
-            artB = Vendita.query.filter_by(nrArticolo=art, tipo=tipo).all()
-            print(artB)  # mi mostra tutte le vendita a TIPO per un determinato articolo
-            # ora voglio contare la quantità totale di articoli venduti per trovare il Volume(Budget o consuntivo)
-            for i in range(len(artB)):
-                qtaB = qtaB + artB[i].qta
-            vBudget = qtaB
-            print(str(vBudget) + " => " + art + " venduti")
-            # ora invece voglio trovare il prezzo di un singolo articolo --> leggi la prima vendita a BUDGET dell'articolo, prendi il prezzo, qta e il codice del cliente(in caso l'utente non pagasse in euro, fai la funzione qua sopra)
-            pBudget = artB[0].importoVenditeVL
-            print(str(pBudget) + " => prezzo totale dei tot articoli, da sistemare ")
-            qtaB = artB[0].qta
-            pBudget = pBudget / qtaB
-            print(str(pBudget) + " => prezzo unitario in valuta locale")
-            pBudget = conversioneValuta(pBudget, artB[0].nrOrigine, tipo)
-            print(str(pBudget) + " => prezzo unitario in euro")
-            print()
-            print()
+        # QUA CALCOLIAMO IL MIX
+        for i in range(len(lista)):  # for per trovare il mix
+            mixCons.append(round(((listaQuantitaCons[i] / qtaCons) * 100), 2))
+            print(str(round(mixCons[i], 3)) + " %" + "  |  " + lista[i].nrArticolo)
 
-            # -------------------TABELLA MP --- legata al file excel Consumi --------------------------#
-            print(" TABELLA MP => " + tipo)
-            artBB = Consumo.query.filter_by(nrArticolo=art, tipo=tipo).all()
-            qtaB = 0
-            for i in range(len(artBB)):
-                qtaB = artBB[i].qtaC + qtaB
-                costoMPB = artBB[i].importoTotaleC + costoMPB
-            print(str(qtaB) + " => totale materie prime usate: non separato!! ")
-            print(str(costoMPB) + " => costo totale materie prime: non separato!!" )
-            print(artBB) #mi mostra tutti i consumi del determinato articolo
-            print()
-            print()
+        # QUA CALCOLIAMO IL RICAVO TOTALE CONSUNTIVO
+        ricavoCons = 0.00
+        for i in range(len(lista)):
+            ricavoCons = ricavoCons + listaQuantitaCons[i] * listaPrezziCons[i]
+        ricavoCons = round(ricavoCons, 2)
+        print(" RICAVI TOTALI: " + " a " + tipo + "  =>  " + str(round(ricavoCons, 2)))
 
-            #------------------TABELLA IMPIEGO + RISORSE?----- legata al file excel impiegoOrarioRisorse e CostoRisors---------#
-            print(" TABELLA LAVORO => " + tipo)
-            artBBB = Impiego.query.filter_by(nrArticolo=art, tipo=tipo).all()
-            print(artBBB)
-            #controllo per quante sezioni di produzione passa l'articolo
-            odp = artBBB[0].nrODP
-            artDipartimenti = Impiego.query.filter_by(nrArticolo=art,nrODP = odp, tipo = tipo).all()
-            print(str(len(artDipartimenti)) + " numero dipartimenti per " + art)
-            for i in range (len(artDipartimenti)) :
-                print(artDipartimenti[i].descrizione +  " " + str(artDipartimenti[i].qtaOutput) + " " + str(artDipartimenti[i].tempoRisorsa))
+        # MIX STANDARD!!!
+        qtaTotStandard = qtaCons
+        for i in range(len(lista)):
+            listaQuantitaMixStd.append(round(((qtaTotStandard * mixBudget[i]) / 100)))
+            print(str(round(listaQuantitaMixStd[i])))
+        ricaviMixStd = 0.00
+        for i in range(len(lista)):
+            ricaviMixStd = ricaviMixStd + listaQuantitaMixStd[i] * listaPrezziBudget[i]
+        ricaviMixStd = round(ricaviMixStd, 2)
+        print(" RICAVI TOTALI MIX STANDARD => " + str(round(ricaviMixStd, 2)))
 
-            print(artDipartimenti)
+        # MIX EFFETTIVO!!!
+        qtatotEffettiva = qtaCons
+        for i in range(len(lista)):
+            mixMixEffettivo.append(round(((listaQuantitaCons[i] / qtatotEffettiva) * 100), 3))
+            print(str(round(mixMixEffettivo[i], 3)) + " %" + "  |  " + lista[i].nrArticolo)
+        ricaviMixEffettivo = 0.00
+        for i in range(len(lista)):
+            ricaviMixEffettivo = ricaviMixEffettivo + listaQuantitaCons[i] * listaPrezziBudget[i]
+        ricaviMixEffettivo = round(ricaviMixEffettivo, 2)
+        print(" RICAVI TOTALI MIX EFFETTIVO => " + str(round(ricaviMixEffettivo)))
+        print()
+        print(" TABELLA RICAVI ")
+        print(" ricavi budget => " + str(round(ricavoBudget)) + "  |  " + " ricavi mix std => " + str(
+            round(ricaviMixStd)) + "  |  " + " ricavi mix effettivo => " + str(
+            round(ricaviMixEffettivo)) + "  |  " + " ricavi consuntivo => " + str(round(ricavoCons)))
+        print()
+        print()
+
+        # PARTE DA SISTEMARE
+        # COSTI VARIABILI --- PARTE BUDGET
+        for i in range(len(lista)):  # for con il distinct
+            tipo = "BUDGET"
+            arttocheck = lista[i].nrArticolo
+            # cerco tutti i consumi dell'articolo che sto controllando => MATERIE PRIME
+            # mi serve il totale di quantità prodotte per il determinato articolo
+            qtaProd = 0  # qtaprodotta BUDGET
+            artCC = Impiego.query.filter_by(tipo=tipo, nrArticolo=arttocheck).all()  # lista
+            artCCC = []  # lista vuota di impieghi
+            ODPPrecedente = ' '  # flag per fare il distinct
+            for j in range(len(artCC)):
+                if artCC[j].nrODP != ODPPrecedente:
+                    if artCC[j].qtaOutput != 0:
+                        qtaProd = qtaProd + artCC[j].qtaOutput
+                        artCCC.append(artCC[j])
+                        ODPPrecedente = artCC[j].nrODP
+            print(artCCC)
+            print(str(qtaProd) + " quantità prodotta per => " + arttocheck)
+            artC = Consumo.query.filter_by(tipo=tipo, nrArticolo=arttocheck).all()
+            costoUnitarioSomma = 0.00
+            for j in range(
+                    len(artC)):  # TROVIAMO IL COSTO UNITARIO PER PRODOTTO DELLE MP facendo costo totale / quantita
+                if qtaProd != 0:
+                    costoUnitarioSomma = costoUnitarioSomma + artC[j].importoTotaleC
+            if qtaProd == 0:
+                qtaProd = 1
+            costoUnitarioSomma = costoUnitarioSomma / qtaProd
+            listaCostiUnitariMPBudget.append(round(costoUnitarioSomma, 2))
+
+            # cerco gli impieghi dell'articolo => LAVORAZIONE
+            costoOrarioSommaUnita = 0
+            artCC = Impiego.query.filter_by(tipo=tipo, nrArticolo=arttocheck).all()
+            for j in range(len(artCC)):  # TROVIAMO COSTO UNITARIO DELLA LAVORAZIONE
+                areaProdToCheck = artCC[j].areaProd
+                risToCheck = artCC[j].risorsa
+                # facciamo l'accesso alla tabella risorsa per la singola riga
+                risorsaUsata = Risorsa.query.filter_by(codRisorsa=risToCheck, areaProd=areaProdToCheck).first()
+                # siccome siamo a budget piglio la colonna euro a budget
+                euroAllOra = risorsaUsata.costoOrarioBudget
+                if artCC[j].qtaOutput != 0:
+                    costoOrarioSommaUnita = costoOrarioSommaUnita + ((euroAllOra * artCC[j].tempoRisorsa))
+            costoOrarioSommaUnita = costoOrarioSommaUnita / qtaProd
+            print(costoOrarioSommaUnita)
+            listaCostiUnitariLAVBudget.append(round(costoOrarioSommaUnita, 2))
+            listaCostiUnitariBudget.append(listaCostiUnitariLAVBudget[i] + listaCostiUnitariMPBudget[i])
+            print(arttocheck + "  |  " + "costo unitario MP => " + str(
+                round(listaCostiUnitariMPBudget[i], 2)) + "  |  " + " costo unitario LAV =>" + str(
+                round(listaCostiUnitariLAVBudget[i], 2)) + "  ==> COSTO UNITARIO PRODOTTO: " + str(
+                round(listaCostiUnitariBudget[i], 2)) + "  |  qta prodotta => " + str(
+                qtaProd) + "  |  qta venduta => " + str(listaQuantitaBudget[i]))
+
+        print()
+        print()
+
+        # RICORDARSI DI DIVIDERE PER QUANTITA PRODOTTA PURE QUA
+        # COSTI VARIABILI --- PARTE CONSUNTIVO
+        for i in range(len(lista)):  # for con il distinct
+            tipo = "CONSUNTIVO"
+            arttocheck = lista[i].nrArticolo
+            qtaProd = 0  # qtaprodotta BUDGET
+            # cerco tutti i consumi dell'articolo che sto controllando => MATERIE PRIME
+            artCC = Impiego.query.filter_by(tipo=tipo, nrArticolo=arttocheck).all()
+            ODPPrecedente = ' '  # flag per fare il distinct
+            for j in range(len(artCC)):
+                if artCC[j].nrODP != ODPPrecedente:
+                    if artCC[j].qtaOutput != 0:
+                        qtaProd = qtaProd + artCC[j].qtaOutput
+                        ODPPrecedente = artCC[j].nrODP
+            print(str(qtaProd) + " quantità prodotta per => " + arttocheck)
+            artC = Consumo.query.filter_by(tipo=tipo, nrArticolo=arttocheck).all()
+            costoUnitarioSomma = 0.00
+            for j in range(
+                    len(artC)):  # TROVIAMO IL COSTO UNITARIO PER PRODOTTO DELLE MP facendo costo totale / quantita
+                if qtaProd != 0:
+                    costoUnitarioSomma = costoUnitarioSomma + artC[j].importoTotaleC
+            if qtaProd == 0:
+                qtaProd = 1
+            costoUnitarioSomma = costoUnitarioSomma / qtaProd
+            listaCostiUnitariMPCons.append(round(costoUnitarioSomma, 2))
+
+            # cerco gli impieghi dell'articolo => LAVORAZIONE
+            costoOrarioSommaUnita = 0
+            artCC = Impiego.query.filter_by(tipo=tipo, nrArticolo=arttocheck).all()
+            for j in range(len(artCC)):  # TROVIAMO COSTO UNITARIO DELLA LAVORAZIONE
+                areaProdToCheck = artCC[j].areaProd
+                risToCheck = artCC[j].risorsa
+                # facciamo l'accesso alla tabella risorsa per la singola riga
+                risorsaUsata = Risorsa.query.filter_by(codRisorsa=risToCheck, areaProd=areaProdToCheck).first()
+                # siccome siamo a consuntivo piglio la colonna euro a consuntivo
+                euroAllOra = risorsaUsata.costoOrarioConsuntivo
+                if artCC[j].qtaOutput != 0:
+                    costoOrarioSommaUnita = costoOrarioSommaUnita + ((euroAllOra * artCC[j].tempoRisorsa))
+            costoOrarioSommaUnita = costoOrarioSommaUnita / qtaProd
+            print(costoOrarioSommaUnita)
+            listaCostiUnitariLAVCons.append(round(costoOrarioSommaUnita, 2))
+            listaCostiUnitariCons.append(listaCostiUnitariLAVCons[i] + listaCostiUnitariMPCons[i])
+            print(arttocheck + "  |  " + "costo unitario MP => " + str(
+                round(listaCostiUnitariMPCons[i], 2)) + "  |  " + " costo unitario LAV =>" + str(
+                round(listaCostiUnitariLAVCons[i], 2)) + "  ==> COSTO UNITARIO PRODOTTO: " + str(
+                round(listaCostiUnitariCons[i], 2)) + "  |  qta prodotta => " + str(
+                qtaProd) + "  |  qta venduta => " + str(listaQuantitaCons[i]))
+
+        # CVTot = costi variabili totali!!! => qta * costo unitario
+        cvTotBudget = 0.00
+        cvTotMixStd = 0.00
+        cvTotMixEffettivo = 0.00
+        cvTotConsuntivo = 0.00
+        for i in range(len(lista)):
+            cvTotBudget = cvTotBudget + listaQuantitaBudget[i] * listaCostiUnitariBudget[i]
+            cvTotMixStd = cvTotMixStd + listaQuantitaMixStd[i] * listaCostiUnitariBudget[i]
+            cvTotMixEffettivo = cvTotMixEffettivo + listaQuantitaCons[i] * listaCostiUnitariBudget[i]
+            cvTotConsuntivo = cvTotConsuntivo + listaQuantitaCons[i] * listaCostiUnitariCons[i]
+        # calcolo => MOL
+        molBudget = ricavoBudget - cvTotBudget
+        molMixStd = ricaviMixStd - cvTotMixStd
+        molMixEff = ricaviMixEffettivo - cvTotMixEffettivo
+        molCons = ricavoCons - cvTotConsuntivo
+        # calcolo scostamenti ricavi
+        sRBudgetMixStd = ricaviMixStd - ricavoBudget
+        sRMixStdMixEff = ricaviMixEffettivo - ricaviMixStd
+        sRMixEffCons = ricavoCons - ricaviMixEffettivo
+        # calcolo scostamenti costi
+        sCBudgetMixStd = cvTotMixStd - cvTotBudget
+        sCMixStdMixEff = cvTotMixEffettivo - cvTotMixStd
+        scMixEffCons = cvTotConsuntivo - cvTotMixEffettivo
+        # calcolo scostamenti MOL
+        sBudgetMixStd = molMixStd - molBudget
+        sMixStdMixEff = molMixEff - molMixStd
+        sMixEffCons = molCons - molMixEff
+        print()
+        print(" -------------------BUDGET -------------------------")
+        print(" RICAVI TOTALI => " + str(round(ricavoBudget)))
+        print(" COSTI VARIABILI TOTALI  ==> " + str(round(cvTotBudget)))
+        print(" MARGINE OPERATIVO LORDO ==> " + str(round(molBudget)))
+        print(" -----------------------------------------------------------")
+        print(" SCOSTAMENTI TRA BUDGET / MIXSTD (R/C/MOL) ==> " + str(round(sRBudgetMixStd)) + " | " + str(
+            round(sCBudgetMixStd)) + " | " + str(round(sBudgetMixStd)))
+        print(" -----------------------------------------------------------")
+
+        print()
+        print(" ------------------- MIX STD -------------------------")
+        print(" RICAVI TOTALI  => " + str(round(ricaviMixStd)))
+        print(" COSTI VARIABILI TOTALI  ==> " + str(round(cvTotMixStd)))
+        print(" MARGINE OPERATIVO LORDO ==> " + str(round(molMixStd)))
+        print(" -----------------------------------------------------------")
+        print(" SCOSTAMENTI TRA MIX STD / MIX EFF (R/C/MOL) ==> " + str(round(sRMixStdMixEff)) + " | " + str(
+            round(sCMixStdMixEff)) + " | " + str(round(sMixStdMixEff)))
+        print(" -----------------------------------------------------------")
+
+        print()
+        print(" ------------------- MIX EFF -------------------------")
+        print(" RICAVI TOTALI  => " + str(round(ricaviMixEffettivo)))
+        print(" COSTI VARIABILI TOTALI  ==> " + str(round(cvTotMixEffettivo)))
+        print(" MARGINE OPERATIVO LORDO ==> " + str(round(molMixEff)))
+        print(" -----------------------------------------------------------")
+        print(" SCOSTAMENTI TRA MIX EFF / CONSUNTIVO (R/C/MOL) ==> " + str(round(sRMixEffCons)) + " | " + str(
+            round(scMixEffCons)) + " | " + str(round(sMixEffCons)))
+        print(" -----------------------------------------------------------")
+
+        print()
+        print(" ------------------- CONSUNTIVO -------------------------")
+        print(" RICAVI TOTALI  => " + str(round(ricavoCons)))
+        print(" COSTI VARIABILI TOTALI  ==> " + str(round(cvTotConsuntivo)))
+        print(" MARGINE OPERATIVO LORDO ==> " + str(round(molCons)))
+        print(" -----------------------------------------------------------")
+        #riempimento totali per il print
+        listaTotali.append(qtaBudget)
+        listaTotali.append(qtaCons)
+        listaTotali.append(qtaCons)
+        listaTotali.append(qtaCons)
+        listaTotali.append(round(ricavoBudget,2))
+        listaTotali.append(round(ricaviMixStd,2))
+        listaTotali.append(round(ricaviMixEffettivo,2))
+        listaTotali.append(round(ricavoCons,2))
+        listaTotali.append(round(cvTotBudget,2))
+        listaTotali.append(round(cvTotMixStd,2))
+        listaTotali.append(round(cvTotMixEffettivo,2))
+        listaTotali.append(round(cvTotConsuntivo,2))
+        listaTotali.append(round(molBudget,2))
+        listaTotali.append(round(molMixStd,2))
+        listaTotali.append(round(molMixEff,2))
+        listaTotali.append(round(molCons,2))
+    return render_template("scostamenti.html", qtaB = listaTotali[0], qtaMS = listaTotali[1], qtaME = listaTotali[2], qtaC = listaTotali[3], rB = listaTotali[4], rMS = listaTotali[5], rME = listaTotali[6], rC = listaTotali[7], cB = listaTotali[8], cMS = listaTotali[9], cME = listaTotali[10], cC = listaTotali[11], mB = listaTotali[12], mMS = listaTotali[13], mME = listaTotali[14], mC = listaTotali[15])
 
 
-            # -----------------TABELLA RISORSE ---- legata al file excel Risore ------------------------#
-            print("prova per vedere se la tabella risorse funziona")
-            queryy = Risorsa.query.all()
-            print(queryy)
-
-        else:
-            flash('INSERIRE UN CODICE VALIDO!', category='error')
-
-    return render_template("scostamentiArticolo.html")
+@views.route('/', methods=['GET', 'POST'])
+def home():
+    return render_template("home.html")
 
 @views.route('/db')
 def riempi():
@@ -523,6 +461,40 @@ def riempi():
                 print(" ----------> TABELLA RIEMPITA <-------------")
                 print(" ")
             return
+
+@views.route('/specificaArticolo',  methods = ['GET', 'POST'])
+def art():
+    z = 0 #una flag
+    if request.method == "POST":
+        #faccio un bel load prima poi recupo l'indice di quello che devo trovare e mostro tutti i risultati del singolo articolo
+        lista = db.session.query(Vendita.nrArticolo).distinct().all()
+        print(lista)
+        nrArt = request.form.get('nrArt')
+        x = Vendita.query.filter_by(nrArticolo = nrArt).first() #controllo che ci sia almeno una vendita di quel prodotto per vedere se l'articolo esiste
+        if x :
+            # recuperare indice per poi accedere a tutti i dati del singolo articolo
+            indice = 0
+            trovato = 'false'
+            for i in range(len(lista)):
+                if trovato == 'false':
+                    if nrArt != lista[i].nrArticolo:
+                        indice = indice + 1
+                        print(indice)
+                    else:
+                        trovato = 'true'
+                    # se lo ho trovato scorre lista ma senza entrare ed aggiornare l'indice
+            print(indice)
+            i = indice
+            z = 1
+            flash('ARTICOLO TROVATO ', category = 'success')
+            return render_template("specificaArticolo.html", z=z, nrArt = nrArt, puB = listaPrezziBudget[i], qtvB = listaQuantitaBudget[i], mB = mixBudget[i], cmpB = listaCostiUnitariMPBudget[i], clavB = listaCostiUnitariLAVBudget[i], puMS = listaPrezziBudget[i], qtvMS = listaQuantitaMixStd[i], mMS = mixBudget[i], cmMS = listaCostiUnitariMPBudget[i], clavMS = listaCostiUnitariLAVBudget[i], puME = listaPrezziBudget[i], mME = mixMixEffettivo[i], cmME = listaCostiUnitariMPBudget[i], clavME = listaCostiUnitariLAVBudget[i], puC = listaPrezziCons[i], qtvC = listaQuantitaCons[i], mC = mixCons[i], cmpC = listaCostiUnitariMPCons[i], clavC = listaCostiUnitariLAVCons[i])
+        else:
+            flash(' INSERISCI UN CODICE VALIDO!! ', category = 'error')
+    return render_template("specificaArticolo.html", z=z )
+
+@views.route('/chiSiamo')
+def chiSiamo():
+    return render_template("chiSiamo.html")
 
 @views.route('/modifica')
 def modify():

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %} Home
+{% block title %} ▽ | HOME
 {% endblock %}
 {% block content %}
 <br>
@@ -7,23 +7,28 @@
 <br>
 <section id = "home">
     <div class = "container text-center">
-        <h1> FUNZIONI DISPONIBILI SULLA DASHBOARD </h1>
-        <div class = "row">
-            <div class = "col-md-4 servizio">
-                <img src = "images/client.png" class = "servizio-img">
-                <h4> <b> ANALISI SCOSTAMENTO PER CLIENTE  </b> </h4>
-                <p> inserendo il codice del cliente sarà possibile generare gli scostamenti.</p>
+        <h1 class = "titolo"> FUNZIONI DISPONIBILI SULLA DASHBOARD </h1>
+            <div class = "row">
+                <div class = "col-md-4 servizio">
+                <img src = "static/images/monitor.png" class = "servizio-img">
+                <h4> <b> ANALISI SCOSTAMENTO AZIENDALE </b> </h4>
+                <p> studio e calcolo dei ricavi, costi e mol. con scostamenti </p>
+                <a href="/scostamenti"><btn class = "btn btn-primary" > ACCEDI ALLA FUNZIONE </btn></a>
             </div>
-            <div class = "col-md-4 servizio">
-                <img src = "images/distributed.png" class = "servizio-img">
+                <div class = "col-md-4 servizio">
+                <img src = "/static/images/distributed.png" class = "servizio-img">
                 <h4> <b> ANALISI SCOSTAMENTO PER ARTICOLO  </b> </h4>
-                <p> inserendo il codice dell'articolo sarà possibile generare gli scostamenti.</p>
+                <p> inserendo il codice dell'articolo sarà possibile generare gli scostamenti singoli.</p>
+                    <a href="/specificaArticolo"><btn class = "btn btn-primary" > CERCA PER ARTICOLO </btn></a>
             </div>
             <div class = "col-md-4 servizio">
-                <img src = "images/monitor.png" class = "servizio-img">
-                <h4> <b> PANORAMICA SITUAZIONE AZIENDALE </b> </h4>
-                <p> riassunto sull' attività aziendale </p>
+                <img src = "/static/images/client.png" class = "servizio-img">
+                <h4> <b> SERVIZIO ATTIVO  </b> </h4>
+                <p> in questa sezione ti verrà mostrato da chi è stato creato il sito, per poter interagire in caso di problemi</p>
+                <a href="/chiSiamo"><btn class = "btn btn-primary" > SCOPRI DI PIU' </btn></a>
             </div>
+
+
         </div>
     </div>
 </section>
